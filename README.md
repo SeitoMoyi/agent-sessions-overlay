@@ -23,11 +23,11 @@ mo sessions restore <BATCH>      # undo; removals go to ~/.agent-sessions-trash
 mo sessions --help
 ```
 
-The picker is Mole's own menu: `Space` selects, `A` selects all, `Enter` confirms, `S`/`O` sort, `/` searches, `Q` cancels. Running sessions are left out. Removals are listed in `mo history`.
+It's also **6. Sessions** in the `mo` main menu. The picker is Mole's own menu: `Space` selects, `A` selects all, `Enter` confirms, `S`/`O` sort, `/` searches, `Q` cancels. Running sessions are left out. Removals are listed in `mo history`.
 
 ## How it works
 
-- `overlay/bin/sessions.sh` is the command. `scripts/apply_overlay.py` copies it into a Mole source tree. It then makes five small edits: the router case in `mole`, the command list, one help example, and the bash/zsh/fish completions. It also writes `SESSIONS-OVERLAY.md`, which lists the changes. Each edit finds an exact upstream anchor. If Mole changes the router or the command list, the build fails instead of shipping something broken.
+- `overlay/bin/sessions.sh` is the command. `scripts/apply_overlay.py` copies it into a Mole source tree. It then makes a few small edits: the router case and a "6. Sessions" main-menu entry in `mole`, the command list, one help example, and the bash/zsh/fish completions. It also writes `SESSIONS-OVERLAY.md`, which lists the changes. Each edit finds an exact upstream anchor. If Mole changes the router or the command list, the build fails instead of shipping something broken.
 - `.github/workflows/build.yml` runs every 6 hours. It reads Mole's latest release (`releases/latest`, which is always the macOS CLI). If this repo has no release for that version yet, it does the following on a macOS runner:
   - checks out that tag;
   - applies the overlay;

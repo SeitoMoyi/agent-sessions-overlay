@@ -20,7 +20,7 @@ main() {
   local repo="${MOLE_SESSIONS_REPO:-SeitoMoyi/agent-sessions-overlay}"
   local config_dir="${MOLE_CONFIG_DIR:-$HOME/.config/mole}"
   local stamp="$config_dir/.sessions-release"
-  local latest tag have base asset src tty=/dev/null
+  local latest tag have="" have_sum="" base asset src tty=/dev/null
 
   say() { printf '%s\n' "$*"; }
   fail() { say "error: $*" >&2; exit 1; }
@@ -35,20 +35,24 @@ main() {
   tag=${latest##*/}
   [[ "$tag" =~ ^V[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "$repo has no release yet"
 
-  have=$(cat "$stamp" 2>/dev/null || true)
-  if [ "$have" = "$tag" ] && [ -f "$config_dir/bin/sessions.sh" ] && [ "${FORCE:-0}" != 1 ]; then
-    say "$tag with mo sessions is already installed."
-    return 0
-  fi
-  say "Installing $tag with mo sessions (have: ${have:-official Mole or none})"
-
   STAGE=$(mktemp -d)
   trap 'rm -rf "$STAGE"' EXIT
   local stage=$STAGE
   base="https://github.com/$repo/releases/download/$tag"
   asset="agent-sessions-overlay-$tag.tar.gz"
-  curl -fsSL --retry 2 "$base/$asset" -o "$stage/$asset"
   curl -fsSL --retry 2 "$base/SHA256SUMS" -o "$stage/SHA256SUMS"
+
+  # The stamp holds the release checksum, not just the tag: an overlay fix is
+  # re-released under the same Mole version and must still be picked up.
+  local want; want=$(awk '{print $1}' "$stage/SHA256SUMS")
+  read -r have have_sum < "$stamp" 2>/dev/null || true
+  if [ "${have:-}" = "$tag" ] && [ "${have_sum:-}" = "$want" ] && [ -f "$config_dir/bin/sessions.sh" ] &&
+    [ "${FORCE:-0}" != 1 ]; then
+    say "$tag with mo sessions is already installed and up to date."
+    return 0
+  fi
+  say "Installing $tag with mo sessions (have: ${have:-official Mole or none})"
+  curl -fsSL --retry 2 "$base/$asset" -o "$stage/$asset"
   (cd "$stage" && shasum -a 256 -c SHA256SUMS >/dev/null) || fail "checksum mismatch; not installing"
   tar -xzf "$stage/$asset" -C "$stage"
   src="$stage/agent-sessions-overlay-$tag"
@@ -62,7 +66,7 @@ main() {
   /bin/bash "$src/install.sh" --config "$config_dir" < "$tty"
 
   mkdir -p "$config_dir"
-  printf '%s\n' "$tag" > "$stamp"
+  printf '%s %s\n' "$tag" "$want" > "$stamp"
   if command -v mo >/dev/null 2>&1 && mo --help 2>/dev/null | grep -q 'mo sessions'; then
     say "Installed $tag. Run: mo sessions"
   else

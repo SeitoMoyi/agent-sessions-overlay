@@ -28,7 +28,7 @@ affiliated with or endorsed by the Mole project.
 Changes:
 
 - added `bin/sessions.sh` (the `mo sessions` command);
-- `mole`: one router case for `sessions`;
+- `mole`: one router case for `sessions`, and "6. Sessions" in the main menu;
 - `lib/core/commands.sh`: `sessions` in the command list;
 - `lib/manage/update.sh`: one help example;
 - `bin/completion.sh`: `sessions` sub-command completions for bash, zsh and fish;
@@ -56,6 +56,38 @@ def edit(src: Path, rel: str, done_marker: str, pattern: str, insert: str, *, be
     at = m.start() if before else m.end()
     path.write_text(text[:at] + insert + text[at:])
     print(f"patched: {rel}")
+
+
+def main_menu_entry(src: Path) -> None:
+    """Adds "6. Sessions" to the `mo` main menu: drawn line, ↓ limit, Enter
+    and the 6 key. All four anchors must match or none is applied, so an
+    upstream menu change can never leave a half-patched menu."""
+    path = src / "mole"
+    text = path.read_text()
+    if "show_menu_option 6" in text:
+        print("already patched: mole (main menu)")
+        return
+    steps = [
+        (r'^( *)printf [^\n]*show_menu_option 5 "Status [^\n]*\n',
+         lambda m: m.group(0) + m.group(1) + "printf '\\r\\033[2K%s\\n' \"$(show_menu_option 6 \"Sessions     "
+         "Clean agent sessions\" \"$([[ $selected -eq 6 ]] && echo true || echo false)\")\"\n"),
+        (r'\(\(current_option < 5\)\) && \(\(current_option\+\+\)\)',
+         lambda m: "((current_option < 6)) && ((current_option++))"),
+        (r'^( *)5\) launch_menu_command "\$SCRIPT_DIR/bin/status\.sh" ;;\n',
+         lambda m: m.group(0) + m.group(1) + '6) launch_menu_command "$SCRIPT_DIR/bin/sessions.sh" ;;\n'),
+        (r'^( *)"CHAR:5"\)\n\1    launch_menu_command "\$SCRIPT_DIR/bin/status\.sh"\n\1    ;;\n',
+         lambda m: m.group(0) + m.group(1) + '"CHAR:6")\n' + m.group(1) + '    launch_menu_command '
+         '"$SCRIPT_DIR/bin/sessions.sh"\n' + m.group(1) + "    ;;\n"),
+    ]
+    for pattern, _ in steps:
+        if len(re.findall(pattern, text, re.M)) != 1:
+            print(f"::warning::mole: main menu anchor not found ({pattern[:50]}...); "
+                  "menu entry skipped, `mo sessions` still works")
+            return
+    for pattern, repl in steps:
+        text = re.sub(pattern, repl, text, count=1, flags=re.M)
+    path.write_text(text)
+    print("patched: mole (main menu)")
 
 
 def main() -> int:
@@ -114,6 +146,8 @@ def main() -> int:
          "        printf 'complete -f -c %s -n \"__fish_seen_subcommand_from sessions\" -a %s\\n' \"$cmd\" \"$sessions_action\"\n"
          "    done\n",
          before=True, required=False)
+
+    main_menu_entry(src)
 
     (src / "SESSIONS-OVERLAY.md").write_text(NOTICE)
     print("wrote: SESSIONS-OVERLAY.md")

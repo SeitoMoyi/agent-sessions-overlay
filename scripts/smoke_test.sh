@@ -67,6 +67,9 @@ check "restore brings every file back" test "$(files)" = 6
 check "restore brings the Codeg row back" test "$(sqlite3 "$CODEG_DB" 'select count(*) from conversation')" = 1
 
 # --- interactive picker (Mole's shared menu) through a pseudo-terminal
+if python3 -I "$HERE/picker_pty.py" "$SRC/mole" menu; then ok "main menu: 6. Sessions opens the picker"
+else bad "main menu: 6. Sessions opens the picker"; fi
+check "main menu visit changed nothing" test "$(files)" = 6
 if python3 -I "$HERE/picker_pty.py" "$SRC/mole"; then ok "picker: select oldest, confirm, remove"
 else bad "picker: select oldest, confirm, remove"; fi
 check "picker removed exactly the oldest session" test ! -e "$HOME/.codex/sessions/2026/rollout-x-bbbb0001-0000-0000-0000-000000000002.jsonl"

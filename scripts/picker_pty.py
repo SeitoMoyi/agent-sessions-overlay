@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Drives `mo sessions` (the picker) in a pseudo-terminal.
 
-    picker_pty.py <path-to-mole>
+    picker_pty.py <path-to-mole>          `mo sessions`: remove the oldest session
+    picker_pty.py <path-to-mole> menu     `mo`: "6. Sessions" opens the picker
 
-Waits for Mole's menu, presses Enter (selects the row under the cursor, the
-oldest session), then Enter at the confirm prompt, and expects the summary.
+Default: waits for the picker, presses Enter (selects the row under the
+cursor, the oldest session), then Enter at the confirm prompt, and expects
+the summary. menu: waits for the main menu's Sessions line, presses 6,
+expects the picker, then Q.
 Exits non-zero if any screen does not appear within its timeout.
 """
 import fcntl
@@ -23,9 +26,10 @@ ANSI = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\x1b[()][A-Z0-9]")
 
 def main() -> int:
     signal.alarm(120)
+    menu = sys.argv[2:] == ["menu"]
     pid, fd = pty.fork()
     if pid == 0:
-        os.execv(sys.argv[1], [sys.argv[1], "sessions"])
+        os.execv(sys.argv[1], [sys.argv[1]] if menu else [sys.argv[1], "sessions"])
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 30, 140, 0, 0))
     seen = ""
 
@@ -43,7 +47,10 @@ def main() -> int:
                     break
         return text in ANSI.sub("", seen)
 
-    steps = [(None, "Select sessions to remove"), ("\r", "Enter confirm"), ("\r", "Sessions removed")]
+    if menu:
+        steps = [(None, "6. Sessions"), ("6", "Select sessions to remove"), ("q", "")]
+    else:
+        steps = [(None, "Select sessions to remove"), ("\r", "Enter confirm"), ("\r", "Sessions removed")]
     for key, expect in steps:
         if key is not None:
             seen = ""

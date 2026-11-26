@@ -161,7 +161,7 @@ jobs:
           gh release create "$VERSION" "dist/agent-sessions-overlay-$VERSION.tar.gz" dist/SHA256SUMS \
             --target "$GITHUB_SHA" --latest \
             --title "$VERSION with agent sessions (unofficial)" \
-            --notes "Source of [$UPSTREAM $VERSION](https://github.com/$UPSTREAM/releases/tag/$VERSION) (GPL-3.0) with \`mo sessions\` added by this repo's overlay ([$GITHUB_SHA](https://github.com/$GITHUB_REPOSITORY/tree/$GITHUB_SHA)); the changes are listed in SESSIONS-OVERLAY.md inside the archive. Unofficial and not affiliated with or endorsed by the Mole project. Install or update with \`update-mole.sh\` from this repo."
+            --notes "Source of [$UPSTREAM $VERSION](https://github.com/$UPSTREAM/releases/tag/$VERSION) (GPL-3.0) with \`mo sessions\` added by this repo's overlay ([$GITHUB_SHA](https://github.com/$GITHUB_REPOSITORY/tree/$GITHUB_SHA)); the changes are listed in SESSIONS-OVERLAY.md inside the archive. Unofficial and not affiliated with or endorsed by the Mole project. Install or update: \`curl -fsSL https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/install.sh | bash\`"
       # A commit per release keeps the repo "active", so GitHub doesn't
       # switch the schedule off after 60 quiet days.
       - name: Record the built version

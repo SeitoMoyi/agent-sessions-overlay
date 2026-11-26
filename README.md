@@ -2,6 +2,18 @@
 
 Adds a `mo sessions` command to [Mole](https://github.com/tw93/Mole) (GPL-3.0), the macOS cleanup CLI. It lists and removes Claude Code, Codex and Antigravity sessions, and knows which ones [Codeg](https://codeg.app) has deleted. Each official Mole release is rebuilt with the command added. Unofficial and not affiliated with or endorsed by the Mole project.
 
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/SeitoMoyi/agent-sessions-overlay/main/install.sh | bash
+```
+
+It installs the latest release, which is the newest Mole plus `mo sessions`, using Mole's own installer. It replaces an official Mole install if you have one and keeps your settings. Your password is asked for when `mo` lives in a root-owned folder such as `/usr/local/bin`. **Run the same line again to update.** Don't use `mo update`, which installs the official Mole without `mo sessions`.
+
+To uninstall, run `mo remove` (Mole's own uninstaller).
+
+## Usage
+
 ```sh
 mo sessions                      # pick sessions to remove in Mole's menu
 mo sessions list -a claude       # table; -q KEYWORD, -n COUNT
@@ -24,27 +36,15 @@ The picker is Mole's own menu: `Space` selects, `A` selects all, `Enter` confirm
   - publishes `agent-sessions-overlay-<version>.tar.gz` and `SHA256SUMS` as a GitHub Release with the same tag as Mole's.
 - `scripts/smoke_test.sh` creates fake sessions in a throwaway HOME and tests `list`, `prune -n`, `rm`, `orphans`, `restore`, the operations log and the help and completion wiring. It also drives the interactive picker through a pseudo-terminal, which catches changes to Mole's shared menu.
 - A push that changes `overlay/` or `scripts/` rebuilds and re-releases the current version.
-- `update-mole.sh` downloads the latest release and checks its SHA-256. It then runs Mole's own `install.sh` from it, which also fetches the official `analyze`/`status` binaries for that version.
+- `install.sh` (the install line above) downloads the latest release and checks its SHA-256. It then runs Mole's own `install.sh` from it, which also fetches the official `analyze`/`status` binaries for that version. Everything runs inside one function, so a download cut short never runs half a script.
 
-## Setup
+## Maintaining
 
-1. Push this folder to a **public** GitHub repo named `agent-sessions-overlay` (public repos get macOS runner minutes free).
-2. In the repo, go to **Settings → Actions → General → Workflow permissions** and choose **Read and write permissions**.
-3. Go to **Actions → Build with agent sessions → Run workflow**.
-4. On your Mac, run:
-
-   ```sh
-   ./update-mole.sh
-   ```
-
-   Run it again whenever a new release appears. It does nothing if you're already up to date.
-
-To rebuild a version, run the workflow with **force**. To build a specific version, enter it in **version** (e.g. `V1.74.0`).
+New Mole releases are picked up automatically. To rebuild a version, go to **Actions → Build with agent sessions → Run workflow** and tick **force**. To build a specific version, enter it in **version** (e.g. `V1.74.0`). A fork needs **Settings → Actions → General → Workflow permissions → Read and write**, and `MOLE_SESSIONS_REPO=owner/name` when running `install.sh`.
 
 ## Notes
 
-- **Use `update-mole.sh`, not `mo update`.** `mo update` installs the official Mole, which has no `mo sessions`; `update-mole.sh` puts it back. Your session trash is untouched either way.
-- The installer asks for your password when the `mo` launcher is in a root-owned folder such as `/usr/local/bin`.
+- If `mo update` ever replaced it with the official Mole, the install line puts `mo sessions` back. Your session trash is untouched either way.
 - GitHub switches off schedules in repos with no activity for 60 days. The workflow commits `LATEST` on every release to prevent that. If it ever gets switched off, re-enable it on the Actions tab.
 - Settings for testing or other layouts: `CLAUDE_CONFIG_DIR`, `CODEX_HOME`, `ANTIGRAVITY_DIR`, `CODEG_DB`, `AGENT_SESSIONS_TRASH`.
 
